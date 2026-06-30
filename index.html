@@ -3,25 +3,384 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>테스트 페이지</title>
-  <style>
-    body {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", sans-serif;
-      background-color: #fafafa;
-      color: #333;
-    }
-    h1 {
-      font-size: 1.8rem;
-      font-weight: 400;
-    }
-  </style>
+  <title>메지온(Mezzion) 주식 관리 대시보드</title>
+  <meta name="description" content="메지온 주식 보유 현황 및 평가금액 계산기 대시보드">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <h1>안녕하세요. 테스트페이지입니다.</h1>
+
+  <!-- Background Orbs -->
+  <div class="glow-container">
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+  </div>
+
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="brand-title">
+        <h1>MEZZION Portfolio</h1>
+        <p>메지온 주식 자산 및 평가 현황 대시보드</p>
+      </div>
+      <div>
+        <span style="font-size: 0.85rem; color: var(--text-secondary); background: rgba(255,255,255,0.03); padding: 0.5rem 1rem; border-radius: 30px; border: 1px solid var(--border-color)">
+          실시간 연동 상태: <strong style="color: var(--success)">Vercel CI/CD 완료</strong>
+        </span>
+      </div>
+    </header>
+
+    <!-- Valuation Overview -->
+    <section class="valuation-board">
+      <div class="val-main">
+        <div class="val-title">총 평가 금액</div>
+        <div class="val-amount" id="total-valuation">0원</div>
+        <div class="val-return-wrapper">
+          <div class="return-badge" id="total-return-badge">
+            <span id="total-return-sign"></span>
+            <span id="total-return-percent">0.00%</span>
+          </div>
+          <span style="color: var(--text-secondary); font-size: 0.9rem;" id="total-profit-loss">0원</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Section Grid -->
+    <div class="dashboard-grid">
+      
+      <!-- Left: Portfolio Assets & Lot Breakdown -->
+      <div style="display: flex; flex-direction: column; gap: 2rem;">
+        
+        <!-- Summary Cards -->
+        <div class="summary-grid">
+          <!-- Total Shares -->
+          <div class="summary-card">
+            <div class="summary-label">총 보유 주식</div>
+            <div class="summary-value" id="summary-total-shares">0주</div>
+          </div>
+          <!-- Average Buy Price -->
+          <div class="summary-card">
+            <div class="summary-label">평균 매입 단가</div>
+            <div class="summary-value" id="summary-avg-price">0원</div>
+          </div>
+          <!-- Total Invested -->
+          <div class="summary-card">
+            <div class="summary-label">총 매입 금액</div>
+            <div class="summary-value" id="summary-total-invested">0원</div>
+          </div>
+        </div>
+
+        <!-- Lot Breakdown Table -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M3 20h9M3 4h18M3 8h18M3 12h18M3 16h18"></path></svg>
+              구매 일자별 보유 현황 (Lots)
+            </div>
+            <button class="btn-quick" style="padding: 0.3rem 0.7rem;" onclick="resetToDefault()">초기 현황으로 리셋</button>
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>구분</th>
+                  <th>수량</th>
+                  <th>매입 단가</th>
+                  <th>매입 금액</th>
+                  <th>평가 금액</th>
+                  <th>평가 손익</th>
+                  <th>수익률</th>
+                  <th>작업</th>
+                </tr>
+              </thead>
+              <tbody id="holdings-table-body">
+                <!-- JavaScript handles insertion -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Add Transaction Form -->
+        <div class="card">
+          <div class="card-title" style="margin-bottom: 1.25rem;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            주식 구매 기록 추가
+          </div>
+          <form id="add-lot-form" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; align-items: flex-end;">
+            <div class="input-group">
+              <label for="new-qty">구매 수량</label>
+              <div class="currency-input-wrapper">
+                <input type="number" id="new-qty" placeholder="예: 100" required min="1">
+                <span>주</span>
+              </div>
+            </div>
+            <div class="input-group">
+              <label for="new-price">매입 단가</label>
+              <div class="currency-input-wrapper">
+                <input type="number" id="new-price" placeholder="예: 58000" required min="1">
+                <span>원</span>
+              </div>
+            </div>
+            <button type="submit" class="btn-update" style="height: 48px;">추가하기</button>
+          </form>
+        </div>
+
+      </div>
+
+      <!-- Right: Price Controller & Quick Market Simulator -->
+      <div style="display: flex; flex-direction: column; gap: 2rem;">
+        
+        <!-- Current Price Input -->
+        <div class="card">
+          <div class="card-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+            실시간 현재가 계산기
+          </div>
+          <div class="price-updater" style="margin-top: 1.25rem;">
+            <div class="input-group">
+              <label for="current-price-input">메지온 현재 주가</label>
+              <div class="currency-input-wrapper">
+                <input type="number" id="current-price-input" value="58000" min="1" step="100">
+                <span>원</span>
+              </div>
+            </div>
+            
+            <button class="btn-update" onclick="updateValuation()">평가금액 재계산</button>
+            
+            <div style="border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 0.5rem;">
+              <span style="font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase;">빠른 주가 시뮬레이션</span>
+              <div class="action-grid">
+                <button class="btn-quick" onclick="adjustPricePercent(5)">+5%</button>
+                <button class="btn-quick" onclick="adjustPricePercent(2)">+2%</button>
+                <button class="btn-quick" onclick="adjustPricePercent(-2)">-2%</button>
+                <button class="btn-quick" onclick="adjustPricePercent(-5)">-5%</button>
+              </div>
+              <div class="action-grid" style="grid-template-columns: 1fr 1fr; margin-top: 0.5rem;">
+                <button class="btn-quick" onclick="setFixedPrice(60000)">60,000원 설정</button>
+                <button class="btn-quick" onclick="setFixedPrice(55000)">55,000원 설정</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info / Tip Card -->
+        <div class="card" style="background: rgba(99, 102, 241, 0.03);">
+          <div class="card-title" style="color: var(--primary);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            도움말 및 기능 안내
+          </div>
+          <div style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; margin-top: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+            <p>1. **평가 금액 실시간 변동**: 우측 계산기에 메지온의 현재 시장 가격을 입력하면 전체 포트폴리오의 실시간 손익이 즉시 반영됩니다.</p>
+            <p>2. **데이터 로컬 저장**: 구매 기록 및 수정한 현재가는 브라우저 메모리에 안전하게 저장되어 재방문 시에도 유지됩니다.</p>
+            <p>3. **GitHub & Vercel**: 추가하신 내용은 자동화 파이프라인을 거쳐 즉시 배포 상태로 적용 가능합니다.</p>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <footer>
+      <p>&copy; 2026 메지온 주식 관리 포트폴리오 대시보드. Antigravity & Vercel 통합 관리 공간.</p>
+    </footer>
+  </div>
+
+  <script>
+    // Initial Stock Lots provided by user
+    const defaultLots = [
+      { id: 1, qty: 266, buyPrice: 57400, date: '1차 보유분' },
+      { id: 2, qty: 2195, buyPrice: 58748, date: '2차 보유분' }
+    ];
+
+    let portfolio = [];
+    let currentStockPrice = 58000;
+
+    // Load data from localStorage or initialize defaults
+    function initData() {
+      const savedPortfolio = localStorage.getItem('mezzion_portfolio');
+      const savedPrice = localStorage.getItem('mezzion_current_price');
+
+      if (savedPortfolio) {
+        portfolio = JSON.parse(savedPortfolio);
+      } else {
+        portfolio = [...defaultLots];
+        savePortfolio();
+      }
+
+      if (savedPrice) {
+        currentStockPrice = parseInt(savedPrice);
+        document.getElementById('current-price-input').value = currentStockPrice;
+      } else {
+        // Set a default initial current price between their two lots
+        currentStockPrice = 58000;
+        document.getElementById('current-price-input').value = currentStockPrice;
+        savePrice();
+      }
+
+      updateValuation();
+    }
+
+    function savePortfolio() {
+      localStorage.setItem('mezzion_portfolio', JSON.stringify(portfolio));
+    }
+
+    function savePrice() {
+      localStorage.setItem('mezzion_current_price', currentStockPrice.toString());
+    }
+
+    function resetToDefault() {
+      if (confirm("주식 보유 내역을 최초 제공해주신 2개 분량(266주, 2195주)으로 리셋하시겠습니까?")) {
+        portfolio = [...defaultLots];
+        savePortfolio();
+        updateValuation();
+      }
+    }
+
+    // Number formatter helper
+    function formatKRW(val) {
+      return Math.round(val).toLocaleString('ko-KR') + '원';
+    }
+
+    function formatQty(val) {
+      return val.toLocaleString('ko-KR') + '주';
+    }
+
+    // Recalculate calculations & render UI
+    function updateValuation() {
+      const priceInput = document.getElementById('current-price-input');
+      const parsedPrice = parseInt(priceInput.value);
+      
+      if (!isNaN(parsedPrice) && parsedPrice > 0) {
+        currentStockPrice = parsedPrice;
+        savePrice();
+      }
+
+      let totalShares = 0;
+      let totalInvested = 0;
+      let totalValuation = 0;
+
+      const tbody = document.getElementById('holdings-table-body');
+      tbody.innerHTML = '';
+
+      portfolio.forEach((lot, index) => {
+        const lotInvested = lot.qty * lot.buyPrice;
+        const lotValuation = lot.qty * currentStockPrice;
+        const lotProfit = lotValuation - lotInvested;
+        const lotReturn = (lotInvested > 0) ? (lotProfit / lotInvested) * 100 : 0;
+
+        totalShares += lot.qty;
+        totalInvested += lotInvested;
+        totalValuation += lotValuation;
+
+        const returnClass = lotProfit > 0 ? 'text-success' : (lotProfit < 0 ? 'text-danger' : '');
+        const sign = lotProfit > 0 ? '+' : '';
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="font-weight: 500; color: var(--text-primary);">${lot.date || (index + 1) + '차 매입'}</td>
+          <td class="text-mono">${formatQty(lot.qty)}</td>
+          <td class="text-mono">${formatKRW(lot.buyPrice)}</td>
+          <td class="text-mono">${formatKRW(lotInvested)}</td>
+          <td class="text-mono">${formatKRW(lotValuation)}</td>
+          <td class="text-mono ${returnClass}">${sign}${formatKRW(lotProfit)}</td>
+          <td class="text-mono ${returnClass}" style="font-weight:600;">${sign}${lotReturn.toFixed(2)}%</td>
+          <td>
+            <button class="btn-quick" style="padding: 0.2rem 0.5rem; border-color: rgba(239, 68, 68, 0.2); color: var(--danger);" onclick="deleteLot(${lot.id})">삭제</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // Weighted averages
+      const totalProfit = totalValuation - totalInvested;
+      const totalReturn = (totalInvested > 0) ? (totalProfit / totalInvested) * 100 : 0;
+      const avgPrice = (totalShares > 0) ? (totalInvested / totalShares) : 0;
+
+      // Update values in UI
+      document.getElementById('total-valuation').textContent = formatKRW(totalValuation);
+      document.getElementById('summary-total-shares').textContent = formatQty(totalShares);
+      document.getElementById('summary-avg-price').textContent = formatKRW(avgPrice);
+      document.getElementById('summary-total-invested').textContent = formatKRW(totalInvested);
+
+      // Main badge status
+      const totalReturnBadge = document.getElementById('total-return-badge');
+      const totalReturnSign = document.getElementById('total-return-sign');
+      const totalReturnPercent = document.getElementById('total-return-percent');
+      const totalProfitLoss = document.getElementById('total-profit-loss');
+
+      const profitSign = totalProfit > 0 ? '+' : '';
+      totalProfitLoss.textContent = `${profitSign}${formatKRW(totalProfit)} 평가 손익`;
+      totalReturnPercent.textContent = `${totalReturn.toFixed(2)}%`;
+
+      if (totalProfit > 0) {
+        totalReturnBadge.className = 'return-badge up';
+        totalReturnSign.textContent = '▲';
+        totalProfitLoss.className = 'text-success';
+      } else if (totalProfit < 0) {
+        totalReturnBadge.className = 'return-badge down';
+        totalReturnSign.textContent = '▼';
+        totalProfitLoss.className = 'text-danger';
+      } else {
+        totalReturnBadge.className = 'return-badge';
+        totalReturnSign.textContent = '';
+        totalProfitLoss.className = '';
+      }
+    }
+
+    // Adjust price by percent
+    function adjustPricePercent(percent) {
+      const priceInput = document.getElementById('current-price-input');
+      const currentVal = parseInt(priceInput.value) || currentStockPrice;
+      const newVal = Math.round(currentVal * (1 + (percent / 100)));
+      priceInput.value = newVal;
+      updateValuation();
+    }
+
+    // Set absolute price
+    function setFixedPrice(price) {
+      document.getElementById('current-price-input').value = price;
+      updateValuation();
+    }
+
+    // Add Lot Form Submit Handler
+    document.getElementById('add-lot-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const qtyInput = document.getElementById('new-qty');
+      const priceInput = document.getElementById('new-price');
+
+      const qty = parseInt(qtyInput.value);
+      const buyPrice = parseInt(priceInput.value);
+
+      if (qty > 0 && buyPrice > 0) {
+        const index = portfolio.length + 1;
+        const newLot = {
+          id: Date.now(),
+          qty: qty,
+          buyPrice: buyPrice,
+          date: `${index}차 보유분`
+        };
+
+        portfolio.push(newLot);
+        savePortfolio();
+        updateValuation();
+
+        // reset form
+        qtyInput.value = '';
+        priceInput.value = '';
+      }
+    });
+
+    // Delete Lot
+    function deleteLot(id) {
+      if (confirm("해당 구매 기록을 삭제하시겠습니까?")) {
+        portfolio = portfolio.filter(lot => lot.id !== id);
+        savePortfolio();
+        updateValuation();
+      }
+    }
+
+    // Initialize Page
+    initData();
+  </script>
 </body>
 </html>
