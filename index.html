@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>메지온(Mezzion) 주식 관리 대시보드 & DB</title>
   <meta name="description" content="메지온 주식 보유 현황, 카톡 연동 파서 및 거래 이력 관리 시스템">
   <link rel="stylesheet" href="styles.css">
@@ -15,7 +15,7 @@
     <div class="glow-orb orb-2"></div>
   </div>
 
-  <!-- Sidebar Navigation -->
+  <!-- Sidebar Navigation (Desktop Only) -->
   <aside>
     <div>
       <div class="brand">
@@ -49,11 +49,27 @@
     </div>
   </aside>
 
+  <!-- Sticky Bottom Navigation (Mobile Only) -->
+  <div class="mobile-nav-bar">
+    <div class="mobile-nav-item active" onclick="switchTab('dashboard')" id="mobile-menu-dashboard">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
+      <span>현황</span>
+    </div>
+    <div class="mobile-nav-item" onclick="switchTab('parser')" id="mobile-menu-parser">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+      <span>카톡 입력</span>
+    </div>
+    <div class="mobile-nav-item" onclick="switchTab('db')" id="mobile-menu-db">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"></path></svg>
+      <span>거래 DB</span>
+    </div>
+  </div>
+
   <!-- Main Area -->
   <main>
     <header>
       <h2 id="current-tab-title">자산 현황 대시보드</h2>
-      <div style="display: flex; gap: 1rem; align-items: center;">
+      <div style="display: flex; gap: 1rem; align-items: center;" class="mobile-hide">
         <span style="font-size: 0.85rem; color: var(--text-secondary); background: rgba(255,255,255,0.03); padding: 0.5rem 1rem; border-radius: 30px; border: 1px solid var(--border-color)">
           자동 주가 연동: <strong style="color: var(--success)" id="header-market-status">활성화</strong>
         </span>
@@ -102,7 +118,7 @@
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M3 20h9M3 4h18M3 8h18M3 12h18M3 16h18"></path></svg>
               구매 일자별 보유 현황 (Lots)
             </div>
-            <button class="btn-quick" onclick="resetToDefault()">초기 현황으로 리셋</button>
+            <button class="btn-quick" onclick="resetToDefault()">초기 리셋</button>
           </div>
           <div class="table-wrapper">
             <table>
@@ -165,12 +181,12 @@
         <div class="card">
           <div class="card-title">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-            카카오톡 주문 체결 메시지 붙여넣기
+            카톡 메시지 붙여넣기
           </div>
-          <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0.5rem 0 1.5rem;">
-            증권사에서 받은 카카오톡 알림톡 체결 메시지 전체 내용을 아래 창에 붙여넣어 주세요. 자동으로 분석합니다.
+          <p style="color: var(--text-secondary); font-size: 0.85rem; margin: 0.5rem 0 1.25rem;">
+            증권사 체결 알림톡 내용을 아래 박스에 길게 누르고 붙여넣어 주세요.
           </p>
-          <textarea id="parser-textarea" class="parser-box" placeholder="여기에 카톡 메시지를 붙여넣으세요...&#10;예:&#10;[NH투자증권] 매수 주문체결 알림&#10;종 목 명 : 메지온&#10;체결수량 : 195주&#10;체결단가 : 57,200원" oninput="parseKakaoMsg()"></textarea>
+          <textarea id="parser-textarea" class="parser-box" placeholder="여기에 카톡 알림톡을 붙여넣으세요...&#10;&#10;예:&#10;[NH투자증권] 매수 주문체결 알림&#10;종 목 명 : 메지온&#10;체결수량 : 195주&#10;체결단가 : 57,200원" oninput="parseKakaoMsg()"></textarea>
           
           <div id="parser-error-area" class="text-danger" style="display: none; margin-top: 1rem; font-size: 0.9rem; font-weight: 500;"></div>
         </div>
@@ -179,7 +195,7 @@
         <div class="card" id="parser-result-area" style="display: none;">
           <div class="card-title" style="color: var(--accent-cyan);">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-            1단계: 메시지 분석 결과
+            분석 완료 결과
           </div>
           
           <div class="parsed-result-card">
@@ -188,37 +204,36 @@
               <strong id="res-broker">-</strong>
             </div>
             <div class="parsed-item">
-              <span>거래 종류</span>
+              <span>구분</span>
               <strong id="res-type">-</strong>
             </div>
             <div class="parsed-item">
-              <span>체결 수량</span>
+              <span>수량</span>
               <strong id="res-qty" class="text-mono">-</strong>
             </div>
             <div class="parsed-item">
-              <span>체결 단가</span>
+              <span>단가</span>
               <strong id="res-price" class="text-mono">-</strong>
             </div>
-            <div class="parsed-item">
-              <span>주문 번호</span>
+            <div class="parsed-item" class="mobile-hide">
+              <span>주문번호</span>
               <strong id="res-order" class="text-mono">-</strong>
             </div>
           </div>
 
-          <div style="margin-top: 2rem;">
-            <div class="card-title" style="color: var(--primary);">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-              2단계: 거래 적용 계좌 선택 (주식수 기반 매핑)
+          <div style="margin-top: 1.5rem;">
+            <div class="card-title" style="color: var(--primary); font-size:1.1rem; margin-bottom: 0.5rem;">
+              적용 계좌 지정 (주식수 기반 매핑)
             </div>
-            <p style="color: var(--text-secondary); font-size: 0.85rem; margin: 0.5rem 0 1rem;">
-              어느 보유 계좌에 이번 체결량(<span id="mapping-qty-info" style="color: var(--accent-cyan); font-weight: 700;">-</span>)을 반영할지 선택해 주세요.
+            <p style="color: var(--text-secondary); font-size: 0.8rem; margin-bottom: 0.75rem;">
+              체결량(<span id="mapping-qty-info" style="color: var(--accent-cyan); font-weight: 700;">-</span>)을 반영할 곳을 선택해 주세요.
             </p>
             
             <div class="allocation-list" id="allocation-options-container">
               <!-- Rendered by JS -->
             </div>
 
-            <button class="btn-update" style="width: 100%; margin-top: 1.5rem;" onclick="applyParsedTransaction()">DB에 반영 및 매입금액 업데이트</button>
+            <button class="btn-update" style="width: 100%; margin-top: 1.25rem; padding: 0.9rem;" onclick="applyParsedTransaction()">DB 기록 및 자산 업데이트</button>
           </div>
         </div>
       </div>
@@ -227,31 +242,31 @@
     <!-- TAB 3: TRANSACTION DB -->
     <section class="tab-content" id="tab-db">
       <!-- Actions -->
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h3 style="font-size: 1.2rem; font-weight: 600;">보유 주식 거래 역사 DB</h3>
-        <div style="display: flex; gap: 0.75rem;">
-          <button class="btn-quick" onclick="exportDatabase()">DB 백업 다운로드 (JSON)</button>
-          <button class="btn-quick" onclick="triggerImport()">DB 백업 복원 (JSON)</button>
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+        <h3 style="font-size: 1.1rem; font-weight: 600;">보유 주식 거래 역사 DB</h3>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button class="btn-quick" onclick="exportDatabase()">내보내기</button>
+          <button class="btn-quick" onclick="triggerImport()">가져오기</button>
           <input type="file" id="db-import-file" style="display: none;" onchange="importDatabase(event)" accept=".json">
-          <button class="btn-quick" style="border-color: rgba(239, 68, 68, 0.2); color: var(--danger);" onclick="clearDatabase()">전체 DB 초기화</button>
+          <button class="btn-quick" style="border-color: rgba(239, 68, 68, 0.2); color: var(--danger);" onclick="clearDatabase()">전체 삭제</button>
         </div>
       </div>
 
       <!-- History Table -->
-      <div class="card">
+      <div class="card" style="padding: 1rem;">
         <div class="table-wrapper">
           <table>
             <thead>
               <tr>
-                <th>거래 번호</th>
+                <th class="mobile-hide">거래번호</th>
                 <th>날짜</th>
                 <th>증권사</th>
                 <th>구분</th>
-                <th>적용 계좌</th>
-                <th>주문 번호</th>
-                <th>체결 수량</th>
-                <th>체결 단가</th>
-                <th>총액</th>
+                <th>계좌명</th>
+                <th class="mobile-hide">주문번호</th>
+                <th>수량</th>
+                <th>단가</th>
+                <th class="mobile-hide">합계</th>
                 <th>작업</th>
               </tr>
             </thead>
@@ -281,9 +296,17 @@
     function switchTab(tabId) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.mobile-nav-item').forEach(el => el.classList.remove('active'));
       
       document.getElementById('tab-' + tabId).classList.add('active');
-      document.getElementById('menu-' + tabId).classList.add('active');
+      
+      // Desktop Nav active state
+      const deskEl = document.getElementById('menu-' + tabId);
+      if (deskEl) deskEl.classList.add('active');
+      
+      // Mobile Nav active state
+      const mobEl = document.getElementById('mobile-menu-' + tabId);
+      if (mobEl) mobEl.classList.add('active');
       
       const titles = {
         'dashboard': '자산 현황 대시보드',
@@ -298,6 +321,7 @@
       return Math.round(val).toLocaleString('ko-KR') + '원';
     }
 
+    // Short format for mobile tables
     function formatQty(val) {
       return val.toLocaleString('ko-KR') + '주';
     }
@@ -322,7 +346,7 @@
       if (savedAccounts) {
         accounts = JSON.parse(savedAccounts);
       } else {
-        accounts = JSON.parse(JSON.stringify(initialAccounts)); // clone
+        accounts = JSON.parse(JSON.stringify(initialAccounts));
         saveAccounts();
       }
 
@@ -459,7 +483,7 @@
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td style="font-weight: 600; color: var(--text-primary);">${acc.name} <span style="font-size:0.75rem; color:var(--text-secondary); font-weight:normal;">(${acc.broker})</span></td>
+          <td style="font-weight: 600; color: var(--text-primary);">${acc.name} <span style="font-size:0.7rem; color:var(--text-secondary); font-weight:normal;">(${acc.broker})</span></td>
           <td class="text-mono">${formatQty(acc.qty)}</td>
           <td class="text-mono">${formatKRW(acc.avgPrice)}</td>
           <td class="text-mono">${formatKRW(invested)}</td>
@@ -535,7 +559,7 @@
       if (!typeMatch || !qtyMatch || !priceMatch) {
         resultDiv.style.display = 'none';
         errorDiv.style.display = 'block';
-        errorDiv.innerHTML = "❌ <strong>분석 실패:</strong> 체결 메시지에서 필수 값(체결종류, 체결수량, 체결단가)을 찾을 수 없습니다. 형식을 확인해 주세요.";
+        errorDiv.innerHTML = "❌ <strong>분석 실패:</strong> 필수 항목(체결종류, 체결수량, 체결단가)을 감지하지 못했습니다.";
         return;
       }
 
@@ -560,7 +584,6 @@
 
       document.getElementById('mapping-qty-info').textContent = formatQty(qty) + " " + type;
 
-      // Suggest allocations based on stock qty matches
       renderAllocationOptions(qty, type);
     }
 
@@ -570,8 +593,6 @@
       container.innerHTML = '';
       selectedAccountId = null;
 
-      // Sort accounts or find closest share quantity matches
-      // Suggesting based on quantity match (helpful if they match lot sizes)
       let bestMatchId = null;
       let minDiff = Infinity;
 
@@ -592,14 +613,14 @@
         
         div.innerHTML = `
           <div>
-            <strong style="color: #fff; font-size: 1rem;">${acc.name}</strong> 
-            <span style="font-size:0.8rem; color:var(--text-secondary); margin-left:0.5rem;">(${acc.broker})</span>
-            <div style="font-size:0.8rem; color:var(--text-secondary); margin-top:0.25rem;">
-              현재 잔고: <strong style="color:var(--accent-cyan);">${formatQty(acc.qty)}</strong> (평단: ${formatKRW(acc.avgPrice)})
+            <strong style="color: #fff; font-size: 0.95rem;">${acc.name}</strong> 
+            <span style="font-size:0.75rem; color:var(--text-secondary); margin-left:0.3rem;">(${acc.broker})</span>
+            <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:0.2rem;">
+              잔고: <strong style="color:var(--accent-cyan);">${formatQty(acc.qty)}</strong> (평단: ${formatKRW(acc.avgPrice)})
             </div>
           </div>
           <div>
-            ${isSuggested ? '<span style="font-size:0.75rem; background:rgba(6,182,212,0.15); color:var(--accent-cyan); padding:0.25rem 0.6rem; border-radius:10px; border: 1px solid rgba(6,182,212,0.3); font-weight:600;">주식수 인접 매칭</span>' : ''}
+            ${isSuggested ? '<span style="font-size:0.7rem; background:rgba(6,182,212,0.12); color:var(--accent-cyan); padding:0.2rem 0.5rem; border-radius:10px; border: 1px solid rgba(6,182,212,0.2); font-weight:600;">추천</span>' : ''}
           </div>
         `;
         container.appendChild(div);
@@ -612,15 +633,14 @@
       newAccDiv.onclick = () => selectAllocation('new');
       newAccDiv.innerHTML = `
         <div>
-          <strong style="color: var(--primary); font-size: 1rem;">+ 신규 계좌로 추가</strong>
-          <div style="font-size:0.8rem; color:var(--text-secondary); margin-top:0.25rem;">
-            제시된 증권사 정보로 새로운 구매 분할(Lot)을 만들어 관리합니다.
+          <strong style="color: var(--primary); font-size: 0.95rem;">+ 신규 분할 계좌 추가</strong>
+          <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:0.2rem;">
+            새로운 독립 Lot으로 추가합니다.
           </div>
         </div>
       `;
       container.appendChild(newAccDiv);
 
-      // Auto select best matching account
       if (bestMatchId) {
         selectAllocation(bestMatchId);
       }
@@ -644,7 +664,6 @@
       let accountName = "";
       
       if (selectedAccountId === 'new') {
-        // Create new account
         const name = `${accounts.length + 1}차 보유분`;
         const newAcc = {
           id: Date.now(),
@@ -656,14 +675,12 @@
         accounts.push(newAcc);
         accountName = name;
       } else {
-        // Find existing account
         const acc = accounts.find(a => a.id === selectedAccountId);
         if (!acc) return alert("계좌를 찾을 수 없습니다.");
         
         accountName = acc.name;
 
         if (parsedTransaction.type === '매수') {
-          // Weighted Average buy price update
           const oldInvested = acc.qty * acc.avgPrice;
           const newInvested = parsedTransaction.qty * parsedTransaction.price;
           const totalQty = acc.qty + parsedTransaction.qty;
@@ -672,9 +689,8 @@
           acc.qty = totalQty;
         } else if (parsedTransaction.type === '매도') {
           if (acc.qty < parsedTransaction.qty) {
-            return alert(`오류: 보유 주식 수(${acc.qty}주)보다 매도 체결 수량(${parsedTransaction.qty}주)이 많습니다.`);
+            return alert(`오류: 보유 잔고가 부족합니다.`);
           }
-          // Sell updates shares only, purchase price stays same
           acc.qty -= parsedTransaction.qty;
         }
       }
@@ -691,24 +707,21 @@
         orderNum: parsedTransaction.orderNum
       };
 
-      transactions.unshift(newTx); // Add to beginning of history
+      transactions.unshift(newTx);
 
       saveAccounts();
       saveTransactions();
 
-      // UI updates
       updateValuation();
       renderTransactions();
 
-      alert(`성공: ${accountName}에 ${parsedTransaction.qty}주 ${parsedTransaction.type} 내역이 DB에 기록 및 반영되었습니다!`);
+      alert(`성공: ${accountName}에 거래 반영 완료!`);
 
-      // Reset parser input
       document.getElementById('parser-textarea').value = '';
       document.getElementById('parser-result-area').style.display = 'none';
       parsedTransaction = null;
       selectedAccountId = null;
 
-      // Switch to DB Tab to verify
       switchTab('db');
     }
 
@@ -718,7 +731,7 @@
       tbody.innerHTML = '';
 
       if (transactions.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-muted); padding: 2rem;">기록된 거래 데이터베이스 이력이 없습니다.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-muted); padding: 2rem;">기록된 거래가 없습니다.</td></tr>`;
         return;
       }
 
@@ -727,17 +740,17 @@
         const typeClass = tx.type === '매수' ? 'text-success' : 'text-danger';
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td class="text-mono" style="font-size:0.8rem; color:var(--text-muted);">${tx.id}</td>
-          <td>${tx.date}</td>
-          <td>${tx.broker}</td>
+          <td class="text-mono mobile-hide" style="font-size:0.75rem; color:var(--text-muted);">${tx.id.toString().slice(-6)}</td>
+          <td>${tx.date.split(' ')[0]} <span style="font-size:0.75rem; color:var(--text-secondary);">${tx.date.split(' ')[1]}</span></td>
+          <td>${tx.broker.replace('투자증권', '')}</td>
           <td class="${typeClass}" style="font-weight:600;">${tx.type}</td>
           <td style="font-weight:500;">${tx.accountName}</td>
-          <td class="text-mono">${tx.orderNum}</td>
+          <td class="text-mono mobile-hide">${tx.orderNum}</td>
           <td class="text-mono">${formatQty(tx.qty)}</td>
           <td class="text-mono">${formatKRW(tx.price)}</td>
-          <td class="text-mono" style="font-weight:600;">${formatKRW(totalAmount)}</td>
+          <td class="text-mono mobile-hide" style="font-weight:600;">${formatKRW(totalAmount)}</td>
           <td>
-            <button class="btn-quick" style="padding: 0.2rem 0.5rem; color:var(--danger); border-color: rgba(239,68,68,0.15);" onclick="deleteTransaction(${tx.id})">삭제</button>
+            <button class="btn-quick" style="padding: 0.15rem 0.4rem; color:var(--danger); border-color: rgba(239,68,68,0.1);" onclick="deleteTransaction(${tx.id})">삭제</button>
           </td>
         `;
         tbody.appendChild(tr);
@@ -746,7 +759,7 @@
 
     // Delete transaction from DB
     function deleteTransaction(txId) {
-      if (confirm("이 거래 기록을 데이터베이스에서 삭제하시겠습니까? (⚠️ 주의: 연동된 계좌 매입단가는 복원되지 않으므로 수동 리셋 등이 요구될 수 있습니다.)")) {
+      if (confirm("이 기록을 삭제하시겠습니까? (⚠️ 계좌 매입단가는 복원되지 않으므로 주의가 필요합니다.)")) {
         transactions = transactions.filter(t => t.id !== txId);
         saveTransactions();
         renderTransactions();
@@ -755,7 +768,7 @@
 
     // Clear whole database
     function clearDatabase() {
-      if (confirm("🚨 데이터베이스 내의 모든 거래 역사와 계좌 정보를 영구히 초기화하시겠습니까? 이 작업은 취소할 수 없습니다.")) {
+      if (confirm("데이터베이스를 영구 초기화하시겠습니까?")) {
         accounts = [];
         transactions = [];
         saveAccounts();
@@ -806,12 +819,12 @@
             savePrice();
             updateValuation();
             renderTransactions();
-            alert("🎉 성공: 데이터베이스 복원이 정상적으로 완료되었습니다!");
+            alert("DB 복원이 정상 처리되었습니다.");
           } else {
             throw new Error("Invalid structure");
           }
         } catch (err) {
-          alert("❌ 오류: 백업 파일 구조가 올바르지 않거나 손상된 파일입니다.");
+          alert("오류: 올바르지 않은 백업 파일입니다.");
         }
       };
       reader.readAsText(file);
