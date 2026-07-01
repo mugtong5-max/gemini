@@ -223,17 +223,23 @@
 
           <div style="margin-top: 1.5rem;">
             <div class="card-title" style="color: var(--primary); font-size:1.1rem; margin-bottom: 0.5rem;">
-              적용 계좌 지정 (주식수 기반 매핑)
+              적용 계좌 지정 (계좌 선택)
             </div>
             <p style="color: var(--text-secondary); font-size: 0.8rem; margin-bottom: 0.75rem;">
-              체결량(<span id="mapping-qty-info" style="color: var(--accent-cyan); font-weight: 700;">-</span>)을 반영할 곳을 선택해 주세요.
+              체결량(<span id="mapping-qty-info" style="color: var(--accent-cyan); font-weight: 700;">-</span>)을 반영할 보유 계좌를 지정해 주세요.
             </p>
             
-            <div class="allocation-list" id="allocation-options-container">
-              <!-- Rendered by JS -->
+            <div class="input-group" style="margin-bottom: 1rem;">
+              <select id="allocation-dropdown" onchange="onAllocationDropdownChange(this.value)" style="width: 100%; font-size: 1rem; border-color: rgba(255,255,255,0.08); font-weight: 500;">
+                <!-- Options rendered dynamically -->
+              </select>
             </div>
 
-            <button class="btn-update" style="width: 100%; margin-top: 1.25rem; padding: 0.9rem;" onclick="applyParsedTransaction()">DB 기록 및 자산 업데이트</button>
+            <div id="allocation-preview-box" style="font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary); background: rgba(255,255,255,0.015); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); display: none; margin-bottom: 1.25rem;">
+              <!-- Preview rendered dynamically -->
+            </div>
+
+            <button class="btn-update" style="width: 100%; padding: 0.9rem;" onclick="applyParsedTransaction()">DB 기록 및 자산 업데이트</button>
           </div>
         </div>
       </div>
@@ -587,12 +593,13 @@
       renderAllocationOptions(qty, type);
     }
 
-    // Render Account list for mapping
+    // Render Account options in Dropdown for mapping
     function renderAllocationOptions(qty, type) {
-      const container = document.getElementById('allocation-options-container');
-      container.innerHTML = '';
+      const dropdown = document.getElementById('allocation-dropdown');
+      dropdown.innerHTML = '';
       selectedAccountId = null;
 
+      // Find best match based on shares
       let bestMatchId = null;
       let minDiff = Infinity;
 
@@ -604,55 +611,84 @@
         }
       });
 
+      // Build options
       accounts.forEach((acc) => {
         const isSuggested = acc.id === bestMatchId;
-        const div = document.createElement('div');
-        div.className = 'allocation-option';
-        div.id = `alloc-opt-${acc.id}`;
-        div.onclick = () => selectAllocation(acc.id);
-        
-        div.innerHTML = `
-          <div>
-            <strong style="color: #fff; font-size: 0.95rem;">${acc.name}</strong> 
-            <span style="font-size:0.75rem; color:var(--text-secondary); margin-left:0.3rem;">(${acc.broker})</span>
-            <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:0.2rem;">
-              잔고: <strong style="color:var(--accent-cyan);">${formatQty(acc.qty)}</strong> (평단: ${formatKRW(acc.avgPrice)})
-            </div>
-          </div>
-          <div>
-            ${isSuggested ? '<span style="font-size:0.7rem; background:rgba(6,182,212,0.12); color:var(--accent-cyan); padding:0.2rem 0.5rem; border-radius:10px; border: 1px solid rgba(6,182,212,0.2); font-weight:600;">추천</span>' : ''}
-          </div>
-        `;
-        container.appendChild(div);
+        const opt = document.createElement('option');
+        opt.value = acc.id;
+        opt.textContent = `${acc.name} (${acc.broker}) [잔고: ${formatQty(acc.qty)}] ${isSuggested ? '★ 추천' : ''}`;
+        dropdown.appendChild(opt);
       });
 
-      // Add "New Account" option
-      const newAccDiv = document.createElement('div');
-      newAccDiv.className = 'allocation-option';
-      newAccDiv.id = 'alloc-opt-new';
-      newAccDiv.onclick = () => selectAllocation('new');
-      newAccDiv.innerHTML = `
-        <div>
-          <strong style="color: var(--primary); font-size: 0.95rem;">+ 신규 분할 계좌 추가</strong>
-          <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:0.2rem;">
-            새로운 독립 Lot으로 추가합니다.
-          </div>
-        </div>
-      `;
-      container.appendChild(newAccDiv);
+      // Add option for new lot
+      const newOpt = document.createElement('option');
+      newOpt.value = 'new';
+      newOpt.textContent = `+ 신규 분할 계좌 추가 (새 독립 Lot)`;
+      dropdown.appendChild(newOpt);
 
+      // Auto select best match
       if (bestMatchId) {
-        selectAllocation(bestMatchId);
+        dropdown.value = bestMatchId;
+        onAllocationDropdownChange(bestMatchId);
+      } else if (accounts.length > 0) {
+        dropdown.value = accounts[0].id;
+        onAllocationDropdownChange(accounts[0].id);
+      } else {
+        dropdown.value = 'new';
+        onAllocationDropdownChange('new');
       }
     }
 
-    function selectAllocation(accId) {
-      selectedAccountId = accId;
-      document.querySelectorAll('.allocation-option').forEach(el => el.classList.remove('selected'));
+    // Handle Dropdown Change & Render Preview
+    function onAllocationDropdownChange(val) {
+      selectedAccountId = val === 'new' ? 'new' : parseInt(val);
+      const previewBox = document.getElementById('allocation-preview-box');
       
-      const selectedEl = document.getElementById(`alloc-opt-${accId}`);
-      if (selectedEl) {
-        selectedEl.classList.add('selected');
+      if (!parsedTransaction) {
+        previewBox.style.display = 'none';
+        return;
+      }
+      
+      previewBox.style.display = 'block';
+
+      if (val === 'new') {
+        previewBox.innerHTML = `
+          <div style="font-weight: 700; color: var(--primary); margin-bottom: 0.25rem;">[신규 계좌 생성 예정]</div>
+          <div><strong>계좌명</strong>: ${accounts.length + 1}차 보유분 (${parsedTransaction.broker})</div>
+          <div><strong>예상 잔고</strong>: ${formatQty(parsedTransaction.qty)} (평단: ${formatKRW(parsedTransaction.price)})</div>
+        `;
+      } else {
+        const acc = accounts.find(a => a.id === selectedAccountId);
+        if (acc) {
+          let expectedQty = acc.qty;
+          let expectedAvgPrice = acc.avgPrice;
+          
+          if (parsedTransaction.type === '매수') {
+            expectedQty = acc.qty + parsedTransaction.qty;
+            const currentTotal = acc.qty * acc.avgPrice;
+            const addTotal = parsedTransaction.qty * parsedTransaction.price;
+            expectedAvgPrice = Math.round((currentTotal + addTotal) / expectedQty);
+          } else {
+            expectedQty = Math.max(0, acc.qty - parsedTransaction.qty);
+            // Average price remains same for selling
+          }
+
+          const sign = parsedTransaction.type === '매수' ? '+' : '-';
+          
+          previewBox.innerHTML = `
+            <div style="font-weight: 700; color: var(--accent-cyan); margin-bottom: 0.4rem;">[보유계좌 반영 예상 비교]</div>
+            <div style="display:grid; grid-template-columns: 1.1fr 1.3fr; gap:0.25rem;">
+              <div><strong>현재 잔고</strong>:</div>
+              <div>${formatQty(acc.qty)} (평단 ${formatKRW(acc.avgPrice)})</div>
+              <div><strong>반영 거래</strong>:</div>
+              <div class="${parsedTransaction.type === '매수' ? 'text-success' : 'text-danger'}">${sign}${formatQty(parsedTransaction.qty)}주 (${formatKRW(parsedTransaction.price)})</div>
+              <div style="border-top:1px dashed var(--border-color); margin-top:0.25rem; padding-top:0.25rem;"><strong>변경 예상</strong>:</div>
+              <div style="border-top:1px dashed var(--border-color); margin-top:0.25rem; padding-top:0.25rem; font-weight:700; color:#fff;">
+                ${formatQty(expectedQty)} (평단 ${formatKRW(expectedAvgPrice)})
+              </div>
+            </div>
+          `;
+        }
       }
     }
 
